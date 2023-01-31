@@ -143,7 +143,7 @@ class EventType
         return _request('/eventTypes.json/' . $pk, $credentials);
     }
 
-    static function determine($kart_type, $package, $track=0)
+    static function determine($package, $track=0)
     {
         /* The definition of eventTypeId from the form data */
         try {
@@ -185,7 +185,7 @@ class EventReservationType
         return _request('/eventReservationTypes.json/' . $pk, $credentials);
     }
 
-    static function determine($location, $track)
+    static function determine($track)
     {
         /* The definition of eventReservationTypeId from the form data */
         return (int)$track;
