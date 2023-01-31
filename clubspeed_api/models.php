@@ -45,5 +45,25 @@ class BookRequest
         $date_array = explode(" ", $micro_date);
         $this->created = date('Y-m-d\TH:i:s.') . $date_array[0];
     }
+    
+    public function start_time()
+    {
+        $dates = explode('-', $this->time);
+        $start = $dates[0];
+        $hours = explode(':', $start);
+        if ((int)$hours[0] < 5) $date_start = date('Y-m-d',strtotime($this->date . " + 1 day")) . ' ' . $start;
+        else $date_start = $this->date . ' ' . $start;
+        return $date_start;
+    }
+
+    public function end_time()
+    {
+        $dates = explode('-', $this->time);
+        $end = $dates[1];
+        $hours = explode(':', $end);
+        if ((int)$hours[0] < 5) $date_end = date('Y-m-d',strtotime($this->date . " + 1 day")) . ' ' . $end;
+        else $date_end = $this->date . ' ' . $end;
+        return $date_end;
+    }
 }
 ?>
