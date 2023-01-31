@@ -106,6 +106,13 @@ function _is_valid_choice($value, $choices) {
     return false;
 }
 
+function get_track($package) {
+    if (strcasecmp($package, "package_1") == 0) return array(TRACK_1, TRACK_3);
+    elseif (strcasecmp($package, "package_2") == 0) return array(TRACK_2, TRACK_3);
+    elseif (strcasecmp($package, "package_3") == 0) return array(TRACK_3);
+    return array(TRACK_1);
+}
+
 class Credentials
 {
     public $api_root;
@@ -117,7 +124,234 @@ class Credentials
         $this->api_key = $key;
     }
 }
+/* if event reservation */
+class EventType
+{
+    /* Packages */
+    static function list_event_type($credentials, $track = null, $deleted = false, $enabled = true)
+    {
+        $where = array(
+            'trackId' => $track,
+            'deleted' => $deleted,
+            'enabled' => $enabled,
+        );
+        return _request('/eventTypes.json', $credentials, array('where' => $where));
+    }
 
+    static function get($credentials, $pk)
+    {
+        return _request('/eventTypes.json/' . $pk, $credentials);
+    }
+
+    static function determine($kart_type, $package, $track=0)
+    {
+        /* The definition of eventTypeId from the form data */
+        try {
+            if (EVENT_TYPES_IDS[$track][$package]) {
+                return EVENT_TYPES_IDS[$track][$package];
+            }
+            else throw new Exception('EventType not detected');
+            
+        }
+        catch (Exception $e) {
+            echo 'Exception: ',  $e->getMessage(), "\n";
+        }
+    }
+}
+
+class EventHeatType
+{
+    /* EventRounds for each EventType (package) */
+    static function list_event_heat_type($credentials, $event_type_id = null)
+    {
+        $where = array('eventTypeId' => $event_type_id);
+        return _request('/eventHeatTypes.json', $credentials, array('where' => $where));
+    }
+     static function get($credentials, $pk)
+     {
+         return _request('/eventHeatTypes.json/' . $pk, $credentials);
+     }
+}
+
+class EventReservationType
+{
+    static function list_event_res_type($credentials)
+    {
+        return _request('/eventReservationTypes.json', $credentials);
+    }
+
+    static function get($credentials, $pk)
+    {
+        return _request('/eventReservationTypes.json/' . $pk, $credentials);
+    }
+
+    static function determine($location, $track)
+    {
+        /* The definition of eventReservationTypeId from the form data */
+        return (int)$track;
+    }
+}
+
+class EventReservation
+{
+    static function list_event_res($credentials, $start_time = null, $end_time = null, $day = null,
+                                  $event_type_id = null, $event_reservation_type_id = null, $status = null, $deleted = false)
+    {
+        $where = array(
+            'typeId' => $event_reservation_type_id,
+            'deleted' => $deleted
+        );
+        if ($event_type_id) $where['eventTypeId'] = $event_type_id;
+        if ($day) {
+            unset($interval);
+            $interval = _day_interval($day);
+            $start_time = $interval[0];
+            $end_time = $interval[1];
+        }
+        if ($start_time) {
+            $where['startTime'] = array('$gte' => date('Y-m-d\TH:i:s', strtotime($start_time)));
+        }
+        if ($end_time) {
+            $where['endTime'] = array('$lte' => date('Y-m-d\TH:i:s', strtotime($end_time)));
+        }
+        if ($status) {
+            try {
+                if (!_is_valid_choice($status, EVENT_STATUS_CHOICES)){
+                    throw new Exception('invalid status');
+                }
+            }
+            catch (Exception $e) {
+                echo 'Exception: ',  $e->getMessage(), "\n";
+            }
+            $where['status'] = $status;
+        }
+        return _request('/eventReservations.json', $credentials, array('where' => $where));
+    }
+
+    static function get($credentials, $pk)
+    {
+        return _request('/eventReservations.json/' . $pk, $credentials);
+    }
+
+    static function update($credentials, $pk, $status = null)
+    {
+        $data = array();
+        if ($status) {
+            try {
+                if (!_is_valid_choice($status, EVENT_STATUS_CHOICES)){
+                    throw new Exception('invalid status');
+                }
+            }
+            catch (Exception $e) {
+                echo 'Exception: ',  $e->getMessage(), "\n";
+            }
+            $data['status'] = $status;
+        }
+        return _request('/eventReservations.json/' . $pk, $credentials, $data,null,'PUT');
+    }
+
+    static function delete($credentials, $pk)
+    {
+        return _request('/eventReservations.json/' . $pk, $credentials, array(),null,'DELETE');
+    }
+
+    static function create($credentials, $event_type = null, $start_time = null, $end_time = null,
+                           $event_reservation_type_id = null, $subject = '', $description = '',
+                           $racers = null, $status = null, $rep_id = 3, $user_id = null)
+    {
+        if (!$user_id) $user_id = DEFAULT_USER;
+        $data = array(
+            'typeId' => $event_reservation_type_id,
+            'isEventClosure' => false,
+            'noOfRacers' => $racers,
+            'noOfTotalRacers' => $racers,
+            'repId' => $rep_id,
+            'userId' => $user_id
+        );
+        if ($event_type) {
+            $data['eventTypeId'] = $event_type['eventTypeId'];
+        }
+        if ($start_time) {
+            $data['startTime'] = date('Y-m-d\TH:i:s.00', strtotime($start_time));
+        }
+        if ($end_time) {
+            $data['endTime'] = date('Y-m-d\TH:i:s.00', strtotime($end_time));
+        }
+        if ($subject) $data['subject'] = $subject;
+        if ($description) $data['description'] = $description;
+        if ($status) {
+            try {
+                if (!_is_valid_choice($status, EVENT_STATUS_CHOICES)) {
+                    throw new Exception('invalid status');
+                }
+            }
+            catch (Exception $e) {
+                echo 'Exception: ',  $e->getMessage(), "\n";
+            }
+            $data['status'] = $status;
+        }
+        return _request('/eventReservations.json', $credentials, array(), json_encode($data), 'POST');
+    }
+}
+
+class Event
+{
+    static function list_event($credentials, $start_time = null, $end_time = null, $day = null,
+                               $event_type_id = null, $reservation_id = null)
+    {
+        $where = array(
+            'eventScheduledTime' => array(),
+            'eventTypeId' => $event_type_id,
+            'reservationId' => $reservation_id
+        );
+        if ($day) {
+            unset($interval);
+            $interval = _day_interval($day);
+            $start_time = $interval[0];
+            $end_time = $interval[1];
+        }
+        if ($start_time) $where['eventScheduledTime']['$gte'] = $start_time;
+        if ($end_time) $where['eventScheduledTime']['$lte'] = $end_time;
+        return _request('/events.json', $credentials, array('where'=> $where));
+    }
+
+    static function get($credentials, $pk) {
+        return _request('/events.json/' . $pk, $credentials);
+    }
+
+    static function delete($credentials, $pk){
+        return _request('/events.json/' . $pk, $credentials, array(),null,'DELETE');
+    }
+
+    static function create($credentials, $event_type, $scheduled_time = null, $duration = null,
+                           $description = '', $reservation_id = null, $check_id = null,
+                           $racers = null, $rounds = null)
+    {
+        if (!$rounds) $rounds = -1;
+        $data = array(
+            'eventTypeId' => $event_type['eventTypeId'],
+            'eventTypeName' => $event_type['eventTypeName'],
+            'eventDuration' => $duration,
+            'eventTheme' => '-16776961',
+            'reservationId' => $reservation_id,
+            'onlineCode' => $check_id,
+            'memberOnly' => $event_type['memberOnly'],
+            'trackNo' => $event_type['trackId'],
+            'roundNum' => $rounds,
+            'totalRacers' => $racers,
+            'createdHeatSpots' => $racers,
+            'createdHeatTime' => date('Y-m-d\TH:i:s')
+        );
+        if ($scheduled_time) {
+            $data['eventScheduledTime'] = date('Y-m-d\TH:i:s', strtotime($scheduled_time));
+        }
+        if ($description) $data['eventDesc'] = $description;
+        return _request('/events.json', $credentials,  array(), json_encode($data),'POST');
+    }
+}
+/* if event reservation */
+
+/* if heat */
 class HeatDetails
 {
     static function get($credentials, $pk, $customer)
@@ -266,6 +500,7 @@ class HeatType
         }
     }
 }
+/* if heat */
 
 class Customers
 {
