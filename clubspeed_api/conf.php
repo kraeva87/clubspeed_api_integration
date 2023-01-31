@@ -24,12 +24,6 @@ define('TRACK_CHOICES', array(
     TRACK_3 => 'Track 3'
 ));
 
-define('ACTIVITIES', array(
-    TRACK_1 => 'Kart race1',
-    TRACK_2 => 'Kart race2',
-    TRACK_3 => 'Kart race3'
-));
-
 define('BOOKING_PRODUCT_IDS', array(
     PACKAGE_1 => 100,
     PACKAGE_2 => 101,
@@ -37,10 +31,27 @@ define('BOOKING_PRODUCT_IDS', array(
     PACKAGE_4 => 103
 ));
 
+//if event reservation
+define('EVENT_TYPES_IDS', array(
+    TRACK_1 => array(
+        PACKAGE_1 => 10,
+        PACKAGE_4 => 11
+    ),
+    TRACK_2 => array(
+        PACKAGE_2 => 20
+    ),
+    TRACK_3 => array(
+        PACKAGE_1 => 30,
+        PACKAGE_2 => 31,
+        PACKAGE_3 => 32
+    )
+));
+
+//if heat
 define('HEAT_TYPES_IDS', array(
-    PACKAGE_1 => array(TRACK_1 => 1, TRACK_3 => 2),
-    PACKAGE_2 => array(TRACK_1 => 3, TRACK_3 => 2),
-    PACKAGE_3 => array(TRACK_3 => 2),
+    PACKAGE_1 => array(TRACK_1 => 1, TRACK_3 => 3),
+    PACKAGE_2 => array(TRACK_2 => 2, TRACK_3 => 3),
+    PACKAGE_3 => array(TRACK_3 => 3),
     PACKAGE_4 => array(TRACK_1 => 1)
 ));
 
@@ -74,25 +85,6 @@ define('HEAT_STATUS_CHOICES', array(
     HEAT_STATUS_FINISHED => 'Finished',
     HEAT_STATUS_ABORTED => 'Aborted',
     HEAT_STATUS_CLOSED => 'Closed'
-));
-
-define('OPENING_HOURS', array(
-    'weekday' => array(
-        'start_time' => '09:00',
-        'end_time' => '18:59'
-    ),
-    'friday' => array(
-        'start_time' => '09:00',
-        'end_time' => '19:59'
-    ),
-    'saturday' => array(
-        'start_time' => '9:30',
-        'end_time' => '20:59'
-    ),
-    'sunday' => array(
-        'start_time' => '9:30',
-        'end_time' => '17:59'
-    )
 ));
 
 const CHECK_TYPE_REGULAR = 1, CHECK_TYPE_EVENT = 2;
@@ -130,7 +122,3 @@ define('PAYMENT_STATUS_CHOICES', array(
     PAYMENT_STATUS_PAID => 'Paid',
     PAYMENT_STATUS_VOID => 'Void'
 ));
-
-const TO_EMAIL = 'your-email@your-site.com';
-
-?>
