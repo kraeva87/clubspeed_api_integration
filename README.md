@@ -1,1 +1,1 @@
-# clubspeed_api_integration
+Интеграция с сервисом бронирования Clubspeed
